@@ -3,4 +3,4 @@ dist
 .env
 *.js.map
 
-/src/generated/prisma
+/src/generated

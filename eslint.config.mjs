@@ -1,25 +1,84 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-config-prettier";
-import prettierPlugin from "eslint-plugin-prettier";
+import parser from "@typescript-eslint/parser";
+import eslintConfigPrettier from "eslint-config-prettier";
+import eslintPluginImport from "eslint-plugin-import";
+import eslintPluginPrettier from "eslint-plugin-prettier";
+import { defineConfig } from "eslint/config";
+import globals from "globals";
 
-export default tseslint.config(
-  js.configs.recommended,
+import tseslint from "typescript-eslint";
+
+export default defineConfig([
+  // TypeScript support
   ...tseslint.configs.recommended,
-  prettier,
+
+  // JS base config
   {
+    files: ["**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
     plugins: {
-      prettier: prettierPlugin,
+      js,
     },
     rules: {
-      "prettier/prettier": "error",
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      "@typescript-eslint/explicit-function-return-type": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      ...js.configs.recommended.rules,
     },
   },
+
+  // TypeScript specific config
   {
-    ignores: ["dist/**", "node_modules/**"],
-  }
-);
+    files: ["**/*.ts"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+      parser: parser,
+      parserOptions: {
+        project: "./tsconfig.json",
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint.plugin,
+      import: eslintPluginImport,
+    },
+  },
+
+  // Prettier integration
+  {
+    files: ["**/*.{js,ts}"],
+    plugins: {
+      prettier: eslintPluginPrettier,
+    },
+    extends: [eslintConfigPrettier],
+    rules: {
+      "no-console": "off",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+
+      "prettier/prettier": "off",
+      "import/extensions": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+
+  // Ignore specific folders
+  {
+    ignores: ["node_modules/**", "dist/**", "**/*.d.ts"],
+  },
+]);

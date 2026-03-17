@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import sendResponse from '../../utils/sendResponse';
 
 export const healthCheck = (_req: Request, res: Response): void => {
-  res.status(200).json({
+  sendResponse(res, {
+    statusCode: 200,
     success: true,
     message: 'Server is running',
-    timestamp: new Date().toISOString(),
+    data: { timestamp: new Date().toISOString() },
   });
 };

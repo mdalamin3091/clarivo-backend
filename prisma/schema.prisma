@@ -76,12 +76,17 @@ model Verification {
 // ─── better-auth organization plugin tables ───────────────────────────────────
 
 model Organization {
-  id        String   @id
-  name      String
-  slug      String   @unique
-  logo      String?
-  metadata  String?
-  createdAt DateTime
+  id            String   @id
+  name          String
+  slug          String   @unique
+  logo          String?
+  metadata      String?
+  createdAt     DateTime
+
+  // Onboarding fields
+  modules       String[]
+  accessibility String   @default("public")
+  teamSize      String?
 
   members     Member[]
   invitations Invitation[]

@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import { Prisma } from '../generated/client';
+import handleZodError from '../errors/handleZodError';
+import parsePrismaValidationError from '../errors/parsePrismaValidationError';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -42,6 +45,13 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
+  // Zod validation errors
+  if (err instanceof ZodError) {
+    const { statusCode, message, errorSources } = handleZodError(err);
+    res.status(statusCode).json({ success: false, message, errorSources });
+    return;
+  }
+
   // Prisma known request errors (constraint violations, not found, etc.)
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     const { status, message } = handlePrismaKnownError(err);
@@ -55,10 +65,11 @@ export const errorHandler = (
 
   // Prisma validation errors (invalid query shape, missing required fields)
   if (err instanceof Prisma.PrismaClientValidationError) {
+    const detail = parsePrismaValidationError(err.message);
     res.status(400).json({
       success: false,
       message: 'Invalid data provided.',
-      ...(isDev && { detail: err.message }),
+      ...(isDev && { detail: detail || err.message }),
     });
     return;
   }

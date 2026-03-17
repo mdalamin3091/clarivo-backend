@@ -7,6 +7,7 @@ import { config } from '../config';
 export const auth = betterAuth({
   baseURL: config.BETTER_AUTH_URL,
   secret: config.BETTER_AUTH_SECRET,
+  trustedOrigins: [config.FRONTEND_URL],
 
   database: prismaAdapter(prisma, {
     provider: 'postgresql',

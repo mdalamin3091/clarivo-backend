@@ -1,5 +1,5 @@
+import { config } from './config'; // must be first — loads dotenv before any other module
 import app from './app';
-import { config } from './config';
 import { prisma } from './lib/prisma';
 import logger from './utils/logger';
 

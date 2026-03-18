@@ -10,7 +10,7 @@ export const setupOrganizationSchema = z.object({
     .array(z.enum(['feedback', 'survey', 'changelog', 'roadmap']))
     .min(1, 'Select at least one module'),
   accessibility: z.enum(['public', 'private']),
-  teamSize: z.enum(['1', '2-10', '11-50', '51-200', '201+']),
+  teamSize: z.enum(['', '1', '2-10', '11-50', '51-200', '201+']).optional(),
 });
 
 export const checkNameSchema = z.object({

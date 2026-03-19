@@ -4,13 +4,28 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { toNodeHandler } from 'better-auth/node';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
 
 import { auth } from './lib/auth';
+import { emailQueue } from './lib/queue';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFound } from './middlewares/notFound';
 
 const app: Application = express();
+
+// Bull Board — queue monitoring UI (development only)
+if (config.NODE_ENV === 'development') {
+  const serverAdapter = new ExpressAdapter();
+  serverAdapter.setBasePath('/admin/queues');
+  createBullBoard({
+    queues: [new BullMQAdapter(emailQueue)],
+    serverAdapter,
+  });
+  app.use('/admin/queues', serverAdapter.getRouter());
+}
 
 // 1. CORS — must be before all handlers, credentials required for auth cookies
 app.use(

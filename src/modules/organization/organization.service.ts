@@ -4,7 +4,8 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { prisma } from '../../lib/prisma';
 import { auth } from '../../lib/auth';
 import ApiError from '../../utils/ApiError';
-import { SetupOrganizationInput, OrganizationResponse } from './organization.types';
+import { OrganizationResponse } from './organization.types';
+import { SetupOrganizationBody } from './organization.validation';
 
 function generateSlug(name: string): string {
   return name
@@ -28,9 +29,10 @@ export const checkNameAvailability = async (name: string): Promise<boolean> => {
 
 export const setupOrganization = async (
   req: Request,
-  input: SetupOrganizationInput,
+  input: SetupOrganizationBody,
 ): Promise<OrganizationResponse> => {
-  const { name, modules, accessibility, teamSize } = input;
+  const { name, modules, accessibility } = input;
+  const teamSize = input.teamSize || null; // normalize '' / undefined → null
   const slug = generateSlug(name);
 
   const existing = await prisma.organization.findFirst({

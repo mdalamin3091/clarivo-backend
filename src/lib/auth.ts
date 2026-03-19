@@ -3,6 +3,8 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization } from 'better-auth/plugins';
 import { prisma } from './prisma';
 import { config } from '../config';
+import { emailQueue } from './queue';
+import logger from '../utils/logger';
 
 export const auth = betterAuth({
   baseURL: config.BETTER_AUTH_URL,
@@ -17,6 +19,18 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     autoSignIn: true,
+    requireEmailVerification: false,
+    sendResetPassword: async (data: { user: { email: string; name: string }; url: string }) => {
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour from now
+      await emailQueue.add('send-password-reset', {
+        type: 'send-password-reset',
+        to: data.user.email,
+        userName: data.user.name ?? data.user.email,
+        resetUrl: data.url,
+        expiresAt,
+      });
+      logger.info(`Password reset email job queued for ${data.user.email}`);
+    },
   },
 
   socialProviders: {
@@ -39,6 +53,26 @@ export const auth = betterAuth({
     organization({
       allowUserToCreateOrganization: true,
       creatorRole: 'owner',
+      invitationExpiresIn: 60 * 60 * 48, // 48 hours
+
+      sendInvitationEmail: async (data) => {
+        const inviteUrl = `${config.FRONTEND_URL}/invite/${data.invitation.id}`;
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 48);
+
+        await emailQueue.add('send-invitation', {
+          type: 'send-invitation',
+          to: data.invitation.email,
+          inviterName: data.inviter.user.name ?? data.inviter.user.email,
+          orgName: data.organization.name,
+          role: data.invitation.role,
+          inviteUrl,
+          expiresAt,
+        });
+
+        logger.info(
+          `Invitation email job queued for ${data.invitation.email} → org: ${data.organization.name}`,
+        );
+      },
     }),
   ],
 });

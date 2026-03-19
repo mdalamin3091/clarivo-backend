@@ -11,4 +11,11 @@ export const config = {
   FRONTEND_URL: process.env['FRONTEND_URL'] ?? 'http://localhost:3000',
   GOOGLE_CLIENT_ID: process.env['GOOGLE_CLIENT_ID'] ?? '',
   GOOGLE_CLIENT_SECRET: process.env['GOOGLE_CLIENT_SECRET'] ?? '',
+  // Redis
+  REDIS_HOST: process.env['REDIS_HOST'] ?? 'localhost',
+  REDIS_PORT: parseInt(process.env['REDIS_PORT'] ?? '6379', 10),
+  REDIS_PASSWORD: process.env['REDIS_PASSWORD'] ?? undefined,
+  // Email (Resend)
+  RESEND_API_KEY: process.env['RESEND_API_KEY'] ?? '',
+  EMAIL_FROM: process.env['EMAIL_FROM'] ?? 'Clarivo <onboarding@resend.dev>',
 } as const;

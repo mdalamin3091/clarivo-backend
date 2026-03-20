@@ -5,7 +5,8 @@ import ApiError from '../../utils/ApiError';
 import sendResponse from '../../utils/sendResponse';
 import { checkNameSchema } from './organization.validation';
 import { SetupOrganizationBody } from './organization.validation';
-import { checkNameAvailability, setupOrganization } from './organization.service';
+import { checkNameAvailability, setupOrganization, updateOrgBranding } from './organization.service';
+import { AuthenticatedRequest } from '../../middlewares/requireAuth';
 
 export const checkName = catchAsync(async (req: Request, res: Response) => {
   const result = checkNameSchema.safeParse(req.query);
@@ -31,4 +32,12 @@ export const setup = catchAsync(async (req: Request, res: Response) => {
     message: 'Organization created successfully',
     data: { organization },
   });
+});
+
+export const updateBranding = catchAsync(async (req: Request, res: Response) => {
+  const orgId = (req as AuthenticatedRequest).session.activeOrganizationId;
+  if (!orgId) throw new ApiError(403, 'No active organization');
+
+  const branding = await updateOrgBranding(orgId, req.body);
+  sendResponse(res, { statusCode: 200, success: true, message: 'Branding updated', data: branding });
 });

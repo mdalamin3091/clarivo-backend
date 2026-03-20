@@ -17,4 +17,14 @@ export const checkNameSchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
 
-export type SetupOrganizationBody = z.infer<typeof setupOrganizationSchema>;
+export const updateBrandingSchema = z.object({
+  name:         z.string().min(2).max(100).trim().optional(),
+  brandColor:   z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
+  darkBgColor:  z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
+  defaultTheme: z.enum(['system', 'light', 'dark']).optional(),
+  socialImage:  z.string().url('Invalid URL').nullable().optional(),
+  logo:         z.string().url('Invalid URL').nullable().optional(),
+});
+
+export type SetupOrganizationBody  = z.infer<typeof setupOrganizationSchema>;
+export type UpdateBrandingBody     = z.infer<typeof updateBrandingSchema>;

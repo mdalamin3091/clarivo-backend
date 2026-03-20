@@ -88,6 +88,12 @@ model Organization {
   accessibility String   @default("public")
   teamSize      String?
 
+  // Branding fields
+  brandColor   String?
+  darkBgColor  String?
+  defaultTheme String?  @default("system")
+  socialImage  String?
+
   members     Member[]
   invitations Invitation[]
 }

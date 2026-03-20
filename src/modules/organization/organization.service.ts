@@ -4,8 +4,8 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { prisma } from '../../lib/prisma';
 import { auth } from '../../lib/auth';
 import ApiError from '../../utils/ApiError';
-import { OrganizationResponse } from './organization.types';
-import { SetupOrganizationBody } from './organization.validation';
+import { OrganizationResponse, BrandingResponse } from './organization.types';
+import { SetupOrganizationBody, UpdateBrandingBody } from './organization.validation';
 
 function generateSlug(name: string): string {
   return name
@@ -75,4 +75,21 @@ export const setupOrganization = async (
   });
 
   return organization;
+};
+
+const BRANDING_SELECT = {
+  id: true, name: true, slug: true, logo: true,
+  brandColor: true, darkBgColor: true, defaultTheme: true, socialImage: true,
+} as const;
+
+export const updateOrgBranding = async (
+  orgId: string,
+  input: UpdateBrandingBody,
+): Promise<BrandingResponse> => {
+  const org = await prisma.organization.update({
+    where: { id: orgId },
+    data: input,
+    select: BRANDING_SELECT,
+  });
+  return org;
 };

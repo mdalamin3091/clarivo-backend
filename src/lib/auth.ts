@@ -55,6 +55,20 @@ export const auth = betterAuth({
       creatorRole: 'owner',
       invitationExpiresIn: 60 * 60 * 48, // 48 hours
 
+      schema: {
+        organization: {
+          additionalFields: {
+            modules: { type: 'string[]', required: false },
+            accessibility: { type: 'string', required: false },
+            teamSize: { type: 'string', required: false },
+            brandColor: { type: 'string', required: false },
+            darkBgColor: { type: 'string', required: false },
+            defaultTheme: { type: 'string', required: false },
+            socialImage: { type: 'string', required: false },
+          },
+        },
+      },
+
       sendInvitationEmail: async (data) => {
         const inviteUrl = `${config.FRONTEND_URL}/invite/${data.invitation.id}`;
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 48);

@@ -18,3 +18,14 @@ export interface OrganizationResponse {
   teamSize: string | null;
   createdAt: Date;
 }
+
+export interface BrandingResponse {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  brandColor: string | null;
+  darkBgColor: string | null;
+  defaultTheme: string | null;
+  socialImage: string | null;
+}

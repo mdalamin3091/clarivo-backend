@@ -1,4 +1,5 @@
 import { config } from './config'; // must be first — ensures dotenv is loaded
+import path from 'path';
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -52,7 +53,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// 5. API routes
+// 5. Static files — serve uploaded images before API routes
+app.use(
+  '/uploads',
+  express.static(path.join(process.cwd(), 'uploads')),
+);
+
+// 6. API routes
 app.use('/api/v1', routes);
 
 // 6. 404 & error handlers

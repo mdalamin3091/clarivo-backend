@@ -4,3 +4,9 @@ dist
 *.js.map
 
 /src/generated
+
+# Uploaded files — keep folder structure, ignore contents
+uploads/logos/*
+uploads/social/*
+!uploads/logos/.gitkeep
+!uploads/social/.gitkeep

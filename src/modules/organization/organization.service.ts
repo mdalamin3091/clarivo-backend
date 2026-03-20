@@ -79,7 +79,7 @@ export const setupOrganization = async (
 
 const BRANDING_SELECT = {
   id: true, name: true, slug: true, logo: true,
-  brandColor: true, darkBgColor: true, defaultTheme: true, socialImage: true,
+  displayName: true, brandColor: true, darkBgColor: true, defaultTheme: true, socialImage: true,
 } as const;
 
 export const updateOrgBranding = async (

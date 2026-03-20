@@ -18,7 +18,7 @@ export const checkNameSchema = z.object({
 });
 
 export const updateBrandingSchema = z.object({
-  name:         z.string().min(2).max(100).trim().optional(),
+  displayName:  z.string().min(2).max(100).trim().optional(),
   brandColor:   z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
   darkBgColor:  z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
   defaultTheme: z.enum(['system', 'light', 'dark']).optional(),

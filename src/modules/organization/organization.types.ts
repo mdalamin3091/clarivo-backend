@@ -24,6 +24,7 @@ export interface BrandingResponse {
   name: string;
   slug: string;
   logo: string | null;
+  displayName: string | null;
   brandColor: string | null;
   darkBgColor: string | null;
   defaultTheme: string | null;

@@ -61,6 +61,7 @@ export const auth = betterAuth({
             modules: { type: 'string[]', required: false },
             accessibility: { type: 'string', required: false },
             teamSize: { type: 'string', required: false },
+            displayName: { type: 'string', required: false },
             brandColor: { type: 'string', required: false },
             darkBgColor: { type: 'string', required: false },
             defaultTheme: { type: 'string', required: false },

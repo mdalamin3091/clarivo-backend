@@ -8,13 +8,12 @@ import { Prisma } from '../../generated/client';
 import { OrganizationResponse, BrandingResponse, PortalMenuItem, PortalMenusResponse } from './organization.types';
 import { SetupOrganizationBody, UpdateBrandingBody, UpdatePortalMenusBody } from './organization.validation';
 
-// Default portal menu configs for each onboarding module key
-const PORTAL_MENU_DEFAULTS: Record<string, { name: string; icon: { type: 'predefined'; value: string }; link: string }> = {
-  feedback:  { name: 'Feedback',  icon: { type: 'predefined', value: 'MessageSquare' }, link: '/feedback' },
-  roadmap:   { name: 'Roadmap',   icon: { type: 'predefined', value: 'Map' },           link: '/roadmap' },
-  changelog: { name: 'Changelog', icon: { type: 'predefined', value: 'RefreshCw' },     link: '/changelog' },
-  survey:    { name: 'Survey',    icon: { type: 'predefined', value: 'ClipboardList' }, link: '/survey' },
-};
+// Always-created default portal menus — order is fixed regardless of module selection
+const DEFAULT_PORTAL_MENUS: Omit<PortalMenuItem, 'id'>[] = [
+  { name: 'Feedback',  icon: { type: 'predefined', value: 'MessageSquare' }, link: '/feedback',  order: 1 },
+  { name: 'Roadmap',   icon: { type: 'predefined', value: 'Map' },           link: '/roadmap',   order: 2 },
+  { name: 'Changelog', icon: { type: 'predefined', value: 'RefreshCw' },     link: '/changelog', order: 3 },
+];
 
 function generateSlug(name: string): string {
   return name
@@ -56,10 +55,10 @@ export const setupOrganization = async (
 
   const headers = fromNodeHeaders(req.headers);
 
-  // Seed publicPortalMenus from onboarding module selections
-  const publicPortalMenus: PortalMenuItem[] = modules.map(key => ({
+  // Always seed the three default portal menus with fixed order
+  const publicPortalMenus: PortalMenuItem[] = DEFAULT_PORTAL_MENUS.map(m => ({
+    ...m,
     id: crypto.randomUUID(),
-    ...(PORTAL_MENU_DEFAULTS[key] ?? { name: key, icon: { type: 'predefined', value: 'Box' }, link: `/${key}` }),
   }));
 
   // Create via better-auth (handles member record + session linkage)
@@ -124,9 +123,14 @@ export const replacePortalMenus = async (
     throw new ApiError(409, `"${duplicateLink}" is already used by another menu item. Each link must be unique.`);
   }
 
+  // Re-index order by position to close any gaps, then sort before persisting
+  const menus: PortalMenuItem[] = input.publicPortalMenus
+    .map((m, i) => ({ ...m, order: i + 1 }))
+    .sort((a, b) => a.order - b.order);
+
   await prisma.organization.update({
     where: { id: orgId },
-    data: { publicPortalMenus: input.publicPortalMenus as unknown as Prisma.InputJsonValue },
+    data: { publicPortalMenus: menus as unknown as Prisma.InputJsonValue },
   });
-  return { publicPortalMenus: input.publicPortalMenus };
+  return { publicPortalMenus: menus };
 };

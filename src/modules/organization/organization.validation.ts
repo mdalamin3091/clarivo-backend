@@ -35,10 +35,11 @@ const moduleIconSchema = z.object({
 });
 
 export const moduleItemSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1, 'Module name is required').max(50).trim(),
-  icon: moduleIconSchema,
-  link: z.string().min(1, 'Link is required').max(100).trim(),
+  id:    z.string().uuid(),
+  name:  z.string().min(1, 'Module name is required').max(50).trim(),
+  icon:  moduleIconSchema,
+  link:  z.string().min(1, 'Link is required').max(100).trim(),
+  order: z.number().int().min(1),
 });
 
 export const updatePortalMenusSchema = z.object({

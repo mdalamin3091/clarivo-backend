@@ -28,3 +28,21 @@ export const updateBrandingSchema = z.object({
 
 export type SetupOrganizationBody  = z.infer<typeof setupOrganizationSchema>;
 export type UpdateBrandingBody     = z.infer<typeof updateBrandingSchema>;
+
+const moduleIconSchema = z.object({
+  type: z.enum(['predefined', 'custom']),
+  value: z.string().min(1),
+});
+
+export const moduleItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, 'Module name is required').max(50).trim(),
+  icon: moduleIconSchema,
+  link: z.string().min(1, 'Link is required').max(100).trim(),
+});
+
+export const updatePortalMenusSchema = z.object({
+  publicPortalMenus: z.array(moduleItemSchema).max(20),
+});
+
+export type UpdatePortalMenusBody = z.infer<typeof updatePortalMenusSchema>;

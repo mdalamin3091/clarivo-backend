@@ -83,10 +83,13 @@ model Organization {
   metadata      String?
   createdAt     DateTime
 
-  // Onboarding fields
+  // Onboarding fields (unchanged — string array from wizard)
   modules       String[]
   accessibility String   @default("public")
   teamSize      String?
+
+  // Public portal menu configuration
+  publicPortalMenus Json?
 
   // Branding fields
   displayName  String?

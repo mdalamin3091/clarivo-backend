@@ -118,6 +118,12 @@ export const replacePortalMenus = async (
   orgId: string,
   input: UpdatePortalMenusBody,
 ): Promise<PortalMenusResponse> => {
+  const links = input.publicPortalMenus.map(m => m.link.toLowerCase().trim());
+  const duplicateLink = links.find((link, i) => links.indexOf(link) !== i);
+  if (duplicateLink) {
+    throw new ApiError(409, `"${duplicateLink}" is already used by another menu item. Each link must be unique.`);
+  }
+
   await prisma.organization.update({
     where: { id: orgId },
     data: { publicPortalMenus: input.publicPortalMenus as unknown as Prisma.InputJsonValue },

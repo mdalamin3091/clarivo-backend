@@ -58,14 +58,15 @@ export const auth = betterAuth({
       schema: {
         organization: {
           additionalFields: {
-            modules: { type: 'string[]', required: false },
-            accessibility: { type: 'string', required: false },
-            teamSize: { type: 'string', required: false },
-            displayName: { type: 'string', required: false },
-            brandColor: { type: 'string', required: false },
-            darkBgColor: { type: 'string', required: false },
-            defaultTheme: { type: 'string', required: false },
-            socialImage: { type: 'string', required: false },
+            modules:           { type: 'string[]', required: false },
+            publicPortalMenus: { type: 'json',     required: false },
+            accessibility:     { type: 'string',   required: false },
+            teamSize:          { type: 'string',   required: false },
+            displayName:       { type: 'string',   required: false },
+            brandColor:        { type: 'string',   required: false },
+            darkBgColor:       { type: 'string',   required: false },
+            defaultTheme:      { type: 'string',   required: false },
+            socialImage:       { type: 'string',   required: false },
           },
         },
       },

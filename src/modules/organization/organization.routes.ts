@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth';
 import validate from '../../middlewares/validate';
-import { setupOrganizationSchema, updateBrandingSchema } from './organization.validation';
-import { checkName, setup, updateBranding } from './organization.controller';
+import { setupOrganizationSchema, updateBrandingSchema, updatePortalMenusSchema } from './organization.validation';
+import { checkName, setup, updateBranding, updatePortalMenus } from './organization.controller';
 
 const router = Router();
 
@@ -17,5 +17,10 @@ router.post('/setup', requireAuth, validate(setupOrganizationSchema), setup);
 // PATCH /api/v1/organizations/branding
 // Updates current org's branding settings
 router.patch('/branding', requireAuth, validate(updateBrandingSchema), updateBranding);
+
+// PUT /api/v1/organizations/portal-menus
+// Replaces the public portal menu configuration for the active org
+// Data is read via get-full-organization (better-auth) — no separate GET needed
+router.put('/portal-menus', requireAuth, validate(updatePortalMenusSchema), updatePortalMenus);
 
 export default router;

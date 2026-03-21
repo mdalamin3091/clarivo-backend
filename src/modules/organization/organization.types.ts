@@ -37,13 +37,14 @@ export interface OrganizationResponse {
 }
 
 export interface BrandingResponse {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string | null;
-  displayName: string | null;
-  brandColor: string | null;
-  darkBgColor: string | null;
-  defaultTheme: string | null;
-  socialImage: string | null;
+  id:            string;
+  name:          string;
+  slug:          string;
+  logo:          string | null;
+  displayName:   string | null;
+  brandColor:    string | null;
+  darkBgColor:   string | null;
+  defaultTheme:  string | null;
+  socialImage:   string | null;
+  accessibility: string;
 }

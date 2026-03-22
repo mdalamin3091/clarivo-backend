@@ -26,6 +26,14 @@ const DEFAULT_PORTAL_MENUS = [
   { name: 'Changelog', icon: { type: 'predefined', value: 'RefreshCw' },     link: '/changelog', order: 3 },
 ] as const;
 
+const DEFAULT_STATUSES = [
+  { name: 'In Review',   color: '#6366f1', isDefault: false },
+  { name: 'Planned',     color: '#f59e0b', isDefault: false },
+  { name: 'In Progress', color: '#3b82f6', isDefault: true  },
+  { name: 'Completed',   color: '#22c55e', isDefault: false },
+  { name: 'Rejected',    color: '#ef4444', isDefault: false },
+] as const;
+
 const BOARD_GREETING = {
      welcomingTitle:        "Welcoming title will be here",
     welcomingDescription:  "welcoming description will be here",
@@ -118,6 +126,8 @@ export const auth = betterAuth({
             hideLeaderBoard:   { type: 'boolean',  required: false },
             defaultSorting:    { type: 'string',   required: false },
             boardGreeting:     { type: 'json',     required: false, validator: { input: boardGreetingValidator } },
+            hideCompletedAndCanceledStatuses: { type: 'boolean', required: false },
+            hideAllStatusesFromPublicView:    { type: 'boolean', required: false },
           },
         },
       },
@@ -146,11 +156,17 @@ export const auth = betterAuth({
                 hideLeaderBoard: false,
                 defaultTheme:    'system',
                 boardGreeting:   BOARD_GREETING as unknown as Prisma.InputJsonObject,
+                // Global status settings
+                hideCompletedAndCanceledStatuses: false,
+                hideAllStatusesFromPublicView:    false,
               },
             }),
+            prisma.status.createMany({
+              data: DEFAULT_STATUSES.map(s => ({ ...s, organizationId: organization.id })),
+            }),
           ]);
-          
-          logger.info(`Default board and portal menus seeded for org: ${organization.id}`);
+
+          logger.info(`Default board, portal menus and statuses seeded for org: ${organization.id}`);
         },
       },
 

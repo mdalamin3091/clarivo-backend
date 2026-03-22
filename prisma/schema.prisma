@@ -76,14 +76,14 @@ model Verification {
 // ─── better-auth organization plugin tables ───────────────────────────────────
 
 model Organization {
-  id            String   @id
-  name          String
-  slug          String   @unique
-  logo          String?
-  metadata      String?
-  createdAt     DateTime
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  metadata  String?
+  createdAt DateTime
 
-  // Onboarding fields (unchanged — string array from wizard)
+  // Onboarding fields
   modules       String[]
   accessibility String   @default("public")
   teamSize      String?
@@ -98,8 +98,46 @@ model Organization {
   defaultTheme String?  @default("system")
   socialImage  String?
 
+  // Global board settings
+  hideLeaderBoard Boolean?            @default(false)
+  defaultSorting  BoardDefaultSorting @default(trending)
+
+  // Global board greeting / typography defaults (JSON)
+  // { welcomingTitle, welcomingDescription, postCreationButtonText }
+  boardGreeting Json?
+
+  boards      Board[]
   members     Member[]
   invitations Invitation[]
+}
+
+model Board {
+  id             String @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+
+  // Icon: { type: "predefined" | "emoji", value: "MessageSquare" }
+  icon Json
+
+  defaultSorting BoardDefaultSorting @default(trending)
+
+  // Board-level greeting / typography overrides (JSON)
+  // { welcomingTitle, welcomingDescription, postCreationButtonText }
+  greeting Json?
+
+  visibility               BoardVisibility @default(public)
+  allowSubscribe           Boolean         @default(true)
+  disableFollowupQuestions Boolean         @default(false)
+  disableEndUserPosting    Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
 }
 
 model Member {
@@ -132,4 +170,18 @@ model Invitation {
 
   @@index([organizationId])
   @@index([email])
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum BoardVisibility {
+  public
+  private
+}
+
+enum BoardDefaultSorting {
+  trending
+  recent
+  oldest
+  top
 }

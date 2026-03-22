@@ -17,34 +17,4 @@ export const checkNameSchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
 
-export const updateBrandingSchema = z.object({
-  displayName:   z.string().min(2).max(100).trim().optional(),
-  brandColor:    z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
-  darkBgColor:   z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid hex color').nullable().optional(),
-  defaultTheme:  z.enum(['system', 'light', 'dark']).optional(),
-  socialImage:   z.string().url('Invalid URL').nullable().optional(),
-  logo:          z.string().url('Invalid URL').nullable().optional(),
-  accessibility: z.enum(['public', 'private']).optional(),
-});
-
-export type SetupOrganizationBody  = z.infer<typeof setupOrganizationSchema>;
-export type UpdateBrandingBody     = z.infer<typeof updateBrandingSchema>;
-
-const moduleIconSchema = z.object({
-  type: z.enum(['predefined', 'custom']),
-  value: z.string().min(1),
-});
-
-export const moduleItemSchema = z.object({
-  id:    z.string().uuid(),
-  name:  z.string().min(1, 'Module name is required').max(50).trim(),
-  icon:  moduleIconSchema,
-  link:  z.string().min(1, 'Link is required').max(100).trim(),
-  order: z.number().int().min(1),
-});
-
-export const updatePortalMenusSchema = z.object({
-  publicPortalMenus: z.array(moduleItemSchema).max(20),
-});
-
-export type UpdatePortalMenusBody = z.infer<typeof updatePortalMenusSchema>;
+export type SetupOrganizationBody = z.infer<typeof setupOrganizationSchema>;

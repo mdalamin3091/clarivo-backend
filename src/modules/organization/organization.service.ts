@@ -5,8 +5,20 @@ import { prisma } from '../../lib/prisma';
 import { auth } from '../../lib/auth';
 import ApiError from '../../utils/ApiError';
 import { Prisma } from '../../generated/client';
-import { OrganizationResponse, BrandingResponse, PortalMenuItem, PortalMenusResponse } from './organization.types';
-import { SetupOrganizationBody, UpdateBrandingBody, UpdatePortalMenusBody } from './organization.validation';
+import { OrganizationResponse, PortalMenuItem } from './organization.types';
+import { SetupOrganizationBody } from './organization.validation';
+
+// Default board created for every new organization
+const DEFAULT_BOARD = {
+  name:                    'Feature Request',
+  slug:                    'feature-request',
+  icon:                    { type: 'predefined', value: 'MessageSquare' },
+  defaultSorting:          'trending' as const,
+  visibility:              'public'   as const,
+  allowSubscribe:          true,
+  disableFollowupQuestions: false,
+  disableEndUserPosting:   false,
+};
 
 // Always-created default portal menus — order is fixed regardless of module selection
 const DEFAULT_PORTAL_MENUS: Omit<PortalMenuItem, 'id'>[] = [
@@ -87,6 +99,15 @@ export const setupOrganization = async (
     },
   });
 
+  // Seed the default "Feature Request" board for the new org
+  await prisma.board.create({
+    data: {
+      organizationId: created.id,
+      ...DEFAULT_BOARD,
+      icon:    DEFAULT_BOARD.icon    as unknown as Prisma.InputJsonValue,
+    },
+  });
+
   // Activate the new org in the current session
   await auth.api.setActiveOrganization({
     headers,
@@ -94,44 +115,4 @@ export const setupOrganization = async (
   });
 
   return organization;
-};
-
-const BRANDING_SELECT = {
-  id: true, name: true, slug: true, logo: true,
-  displayName: true, brandColor: true, darkBgColor: true, defaultTheme: true, socialImage: true,
-  accessibility: true,
-} as const;
-
-export const updateOrgBranding = async (
-  orgId: string,
-  input: UpdateBrandingBody,
-): Promise<BrandingResponse> => {
-  const org = await prisma.organization.update({
-    where: { id: orgId },
-    data: input,
-    select: BRANDING_SELECT,
-  });
-  return org;
-};
-
-export const replacePortalMenus = async (
-  orgId: string,
-  input: UpdatePortalMenusBody,
-): Promise<PortalMenusResponse> => {
-  const links = input.publicPortalMenus.map(m => m.link.toLowerCase().trim());
-  const duplicateLink = links.find((link, i) => links.indexOf(link) !== i);
-  if (duplicateLink) {
-    throw new ApiError(409, `"${duplicateLink}" is already used by another menu item. Each link must be unique.`);
-  }
-
-  // Re-index order by position to close any gaps, then sort before persisting
-  const menus: PortalMenuItem[] = input.publicPortalMenus
-    .map((m, i) => ({ ...m, order: i + 1 }))
-    .sort((a, b) => a.order - b.order);
-
-  await prisma.organization.update({
-    where: { id: orgId },
-    data: { publicPortalMenus: menus as unknown as Prisma.InputJsonValue },
-  });
-  return { publicPortalMenus: menus };
 };

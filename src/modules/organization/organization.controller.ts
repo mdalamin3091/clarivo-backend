@@ -4,13 +4,7 @@ import catchAsync from '../../utils/catchAsync';
 import ApiError from '../../utils/ApiError';
 import sendResponse from '../../utils/sendResponse';
 import { checkNameSchema, SetupOrganizationBody } from './organization.validation';
-import {
-  checkNameAvailability,
-  setupOrganization,
-  updateOrgBranding,
-  replacePortalMenus,
-} from './organization.service';
-import { AuthenticatedRequest } from '../../middlewares/requireAuth';
+import { checkNameAvailability, setupOrganization } from './organization.service';
 
 export const checkName = catchAsync(async (req: Request, res: Response) => {
   const result = checkNameSchema.safeParse(req.query);
@@ -35,20 +29,4 @@ export const setup = catchAsync(async (req: Request, res: Response) => {
     message: 'Organization created successfully',
     data: { organization },
   });
-});
-
-export const updateBranding = catchAsync(async (req: Request, res: Response) => {
-  const orgId = (req as AuthenticatedRequest).session.activeOrganizationId;
-  if (!orgId) throw new ApiError(403, 'No active organization');
-
-  const branding = await updateOrgBranding(orgId, req.body);
-  sendResponse(res, { statusCode: 200, success: true, message: 'Branding updated', data: branding });
-});
-
-export const updatePortalMenus = catchAsync(async (req: Request, res: Response) => {
-  const orgId = (req as AuthenticatedRequest).session.activeOrganizationId;
-  if (!orgId) throw new ApiError(403, 'No active organization');
-
-  const data = await replacePortalMenus(orgId, req.body);
-  sendResponse(res, { statusCode: 200, success: true, message: 'Portal menus updated', data });
 });

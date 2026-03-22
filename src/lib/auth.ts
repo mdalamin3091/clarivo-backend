@@ -17,6 +17,7 @@ const DEFAULT_BOARD = {
   allowSubscribe:           true,
   disableFollowupQuestions: false,
   disableEndUserPosting:    false,
+  order:                    1,
 };
 
 const DEFAULT_PORTAL_MENUS = [

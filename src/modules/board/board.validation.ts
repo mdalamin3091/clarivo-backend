@@ -22,7 +22,9 @@ export const createBoardSchema = z.object({
   disableEndUserPosting:   z.boolean().optional(),
 });
 
-export const updateBoardSchema = createBoardSchema.partial();
+export const updateBoardSchema = createBoardSchema
+  .partial()
+  .extend({ order: z.number().int().min(0).optional() });
 
 export type CreateBoardBody = z.infer<typeof createBoardSchema>;
 export type UpdateBoardBody = z.infer<typeof updateBoardSchema>;

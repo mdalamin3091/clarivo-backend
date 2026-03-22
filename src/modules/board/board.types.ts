@@ -21,6 +21,7 @@ export interface BoardResponse {
   allowSubscribe:          boolean;
   disableFollowupQuestions: boolean;
   disableEndUserPosting:   boolean;
+  order:                   number;
   createdAt:               Date;
   updatedAt:               Date;
 }

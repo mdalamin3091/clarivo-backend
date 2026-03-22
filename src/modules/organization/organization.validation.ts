@@ -14,3 +14,12 @@ export const setupOrganizationSchema = z.object({
 });
 
 export type SetupOrganizationBody = z.infer<typeof setupOrganizationSchema>;
+
+export const checkSlugSchema = z.object({
+  slug: z
+    .string()
+    .min(2, 'Slug must be at least 2 characters')
+    .max(100, 'Slug must be at most 100 characters'),
+});
+
+export type CheckSlugQuery = z.infer<typeof checkSlugSchema>;

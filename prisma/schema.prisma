@@ -110,11 +110,16 @@ model Organization {
   hideCompletedAndCanceledStatuses Boolean @default(false)
   hideAllStatusesFromPublicView    Boolean @default(false)
 
+  // tag settings
+  allowUserToTaggingPosts Boolean @default(false)
+
   boards      Board[]
   members     Member[]
   invitations Invitation[]
 
   statuses Status[]
+
+  tags Tag[]
 }
 
 model Member {
@@ -189,6 +194,21 @@ model Status {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model Tag {
+  id             String   @id @default(uuid())
+  name           String
+  color          String
+  isPrivate      Boolean  @default(false)
+  organizationId String
+  order          Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 

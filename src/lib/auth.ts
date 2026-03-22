@@ -26,6 +26,11 @@ const DEFAULT_PORTAL_MENUS = [
   { name: 'Changelog', icon: { type: 'predefined', value: 'RefreshCw' },     link: '/changelog', order: 3 },
 ] as const;
 
+const DEFAULT_TAGS = [
+  { name: 'Bug',     color: '#ef4444', isPrivate: false, order: 1 },
+  { name: 'Feature', color: '#6366f1', isPrivate: false, order: 2 },
+] as const;
+
 const DEFAULT_STATUSES = [
   { name: 'In Review',   color: '#6366f1', isDefault: false },
   { name: 'Planned',     color: '#f59e0b', isDefault: false },
@@ -128,6 +133,7 @@ export const auth = betterAuth({
             boardGreeting:     { type: 'json',     required: false, validator: { input: boardGreetingValidator } },
             hideCompletedAndCanceledStatuses: { type: 'boolean', required: false },
             hideAllStatusesFromPublicView:    { type: 'boolean', required: false },
+            allowUserToTaggingPosts:          { type: 'boolean', required: false },
           },
         },
       },
@@ -159,14 +165,19 @@ export const auth = betterAuth({
                 // Global status settings
                 hideCompletedAndCanceledStatuses: false,
                 hideAllStatusesFromPublicView:    false,
+                // Global tag settings
+                allowUserToTaggingPosts: false,
               },
             }),
             prisma.status.createMany({
               data: DEFAULT_STATUSES.map(s => ({ ...s, organizationId: organization.id })),
             }),
+            prisma.tag.createMany({
+              data: DEFAULT_TAGS.map(t => ({ ...t, organizationId: organization.id })),
+            }),
           ]);
 
-          logger.info(`Default board, portal menus and statuses seeded for org: ${organization.id}`);
+          logger.info(`Default board, portal menus, statuses and tags seeded for org: ${organization.id}`);
         },
       },
 

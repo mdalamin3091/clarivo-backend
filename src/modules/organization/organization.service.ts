@@ -37,16 +37,6 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export const checkNameAvailability = async (name: string): Promise<boolean> => {
-  const slug = generateSlug(name);
-  const existing = await prisma.organization.findFirst({
-    where: {
-      OR: [{ name: { equals: name, mode: 'insensitive' } }, { slug }],
-    },
-  });
-  return !existing;
-};
-
 export const setupOrganization = async (
   req: Request,
   input: SetupOrganizationBody,

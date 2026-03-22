@@ -15,10 +15,6 @@ export interface PortalMenuItem {
   order: number;
 }
 
-export interface PortalMenusResponse {
-  publicPortalMenus: PortalMenuItem[];
-}
-
 export interface SetupOrganizationInput {
   name: string;
   modules: OrgModule[];
@@ -34,16 +30,4 @@ export interface OrganizationResponse {
   accessibility: string;
   teamSize: string | null;
   createdAt: Date;
-}
-
-export interface BrandingResponse {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string | null;
-  displayName: string | null;
-  brandColor: string | null;
-  darkBgColor: string | null;
-  defaultTheme: string | null;
-  socialImage: string | null;
 }

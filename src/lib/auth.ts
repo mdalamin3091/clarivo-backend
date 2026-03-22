@@ -1,10 +1,32 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization } from 'better-auth/plugins';
+import { z } from 'zod';
 import { prisma } from './prisma';
 import { config } from '../config';
 import { emailQueue } from './queue';
 import logger from '../utils/logger';
+
+const portalMenusValidator = z.array(
+  z.object({
+    id:    z.string().min(1),
+    name:  z.string().min(1).max(100),
+    icon:  z.object({
+      type:  z.enum(['predefined', 'custom']),
+      value: z.string().min(1),
+    }),
+    link:  z.string(),
+    order: z.number().int().nonnegative(),
+  }),
+);
+
+const boardGreetingValidator = z
+  .object({
+    welcomingTitle:         z.string().max(200),
+    welcomingDescription:   z.string().max(500),
+    postCreationButtonText: z.string().max(50),
+  })
+  .nullable();
 
 export const auth = betterAuth({
   baseURL: config.BETTER_AUTH_URL,
@@ -59,7 +81,7 @@ export const auth = betterAuth({
         organization: {
           additionalFields: {
             modules:           { type: 'string[]', required: false },
-            publicPortalMenus: { type: 'json',     required: false },
+            publicPortalMenus: { type: 'json',     required: false, validator: { input: portalMenusValidator } },
             accessibility:     { type: 'string',   required: false },
             teamSize:          { type: 'string',   required: false },
             displayName:       { type: 'string',   required: false },
@@ -69,7 +91,7 @@ export const auth = betterAuth({
             socialImage:       { type: 'string',   required: false },
             hideLeaderBoard:   { type: 'boolean',  required: false },
             defaultSorting:    { type: 'string',   required: false },
-            boardGreeting:     { type: 'json',     required: false },
+            boardGreeting:     { type: 'json',     required: false, validator: { input: boardGreetingValidator } },
           },
         },
       },

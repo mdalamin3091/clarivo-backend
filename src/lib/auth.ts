@@ -26,6 +26,19 @@ const DEFAULT_PORTAL_MENUS = [
   { name: 'Changelog', icon: { type: 'predefined', value: 'RefreshCw' },     link: '/changelog', order: 3 },
 ] as const;
 
+const DEFAULT_TAGS = [
+  { name: 'Bug',     color: '#ef4444', isPrivate: false, order: 1 },
+  { name: 'Feature', color: '#6366f1', isPrivate: false, order: 2 },
+] as const;
+
+const DEFAULT_STATUSES = [
+  { name: 'In Review',   color: '#6366f1', isDefault: false, order: 1 },
+  { name: 'Planned',     color: '#f59e0b', isDefault: false, order: 2 },
+  { name: 'In Progress', color: '#3b82f6', isDefault: true,  order: 3 },
+  { name: 'Completed',   color: '#22c55e', isDefault: false, order: 4 },
+  { name: 'Rejected',    color: '#ef4444', isDefault: false, order: 5 },
+] as const;
+
 const BOARD_GREETING = {
      welcomingTitle:        "Welcoming title will be here",
     welcomingDescription:  "welcoming description will be here",
@@ -118,6 +131,11 @@ export const auth = betterAuth({
             hideLeaderBoard:   { type: 'boolean',  required: false },
             defaultSorting:    { type: 'string',   required: false },
             boardGreeting:     { type: 'json',     required: false, validator: { input: boardGreetingValidator } },
+            hideCompletedAndCanceledStatuses: { type: 'boolean', required: false },
+            hideAllStatusesFromPublicView:    { type: 'boolean', required: false },
+            allowUserToTaggingPosts:          { type: 'boolean', required: false },
+            downVoting:                       { type: 'boolean', required: false },
+            hideVotedCountUntilVoted:         { type: 'boolean', required: false },
           },
         },
       },
@@ -146,11 +164,25 @@ export const auth = betterAuth({
                 hideLeaderBoard: false,
                 defaultTheme:    'system',
                 boardGreeting:   BOARD_GREETING as unknown as Prisma.InputJsonObject,
+                // Global status settings
+                hideCompletedAndCanceledStatuses: false,
+                hideAllStatusesFromPublicView:    false,
+                // Global tag settings
+                allowUserToTaggingPosts: false,
+                // Global voting settings
+                downVoting:               false,
+                hideVotedCountUntilVoted: false,
               },
             }),
+            prisma.status.createMany({
+              data: DEFAULT_STATUSES.map(s => ({ ...s, organizationId: organization.id })),
+            }),
+            prisma.tag.createMany({
+              data: DEFAULT_TAGS.map(t => ({ ...t, organizationId: organization.id })),
+            }),
           ]);
-          
-          logger.info(`Default board and portal menus seeded for org: ${organization.id}`);
+
+          logger.info(`Default board, portal menus, statuses and tags seeded for org: ${organization.id}`);
         },
       },
 

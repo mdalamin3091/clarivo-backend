@@ -10,7 +10,7 @@ datasource db {
 // ─── better-auth core tables ──────────────────────────────────────────────────
 
 model User {
-  id            String   @id
+  id            String   @id @default(uuid())
   name          String
   email         String   @unique
   emailVerified Boolean
@@ -25,7 +25,7 @@ model User {
 }
 
 model Session {
-  id                   String   @id
+  id                   String   @id @default(uuid())
   userId               String
   token                String   @unique
   expiresAt            DateTime
@@ -42,7 +42,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(uuid())
   userId                String
   accountId             String
   providerId            String
@@ -63,7 +63,7 @@ model Account {
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(uuid())
   identifier String
   value      String    @db.Text
   expiresAt  DateTime
@@ -76,7 +76,7 @@ model Verification {
 // ─── better-auth organization plugin tables ───────────────────────────────────
 
 model Organization {
-  id        String   @id
+  id        String   @id @default(uuid())
   name      String
   slug      String   @unique
   logo      String?
@@ -95,7 +95,7 @@ model Organization {
   displayName  String?
   brandColor   String?
   darkBgColor  String?
-  defaultTheme String?  @default("system")
+  defaultTheme String? @default("system")
   socialImage  String?
 
   // Global board settings
@@ -106,13 +106,60 @@ model Organization {
   // { welcomingTitle, welcomingDescription, postCreationButtonText }
   boardGreeting Json?
 
+  // status settings
+  hideCompletedAndCanceledStatuses Boolean @default(false)
+  hideAllStatusesFromPublicView    Boolean @default(false)
+
+  // tag settings
+  allowUserToTaggingPosts Boolean @default(false)
+
   boards      Board[]
   members     Member[]
   invitations Invitation[]
+
+  // voting settings 
+  downVoting Boolean @default(false)
+  hideVotedCountUntilVoted Boolean @default(false)
+  
+  statuses     Status[]
+  tags         Tag[]
+  customFields CustomField[]
+}
+
+model Member {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String
+  createdAt      DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Invitation {
+  id             String   @id @default(uuid())
+  organizationId String
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  createdAt      DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter      User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
 }
 
 model Board {
-  id             String @id @default(cuid())
+  id             String @id @default(uuid())
   organizationId String
   name           String
   slug           String
@@ -131,7 +178,7 @@ model Board {
   disableFollowupQuestions Boolean         @default(false)
   disableEndUserPosting    Boolean         @default(false)
 
-  order     Int      @default(0)
+  order Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -142,40 +189,57 @@ model Board {
   @@index([organizationId])
 }
 
-model Member {
-  id             String   @id
+model Status {
+  id             String  @id @default(uuid())
+  name           String
+  color          String
+  isDefault      Boolean @default(false)
+  order          Int     @default(0)
   organizationId String
-  userId         String
-  role           String
-  createdAt      DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, userId])
   @@index([organizationId])
-  @@index([userId])
 }
 
-model Invitation {
-  id             String   @id
+model Tag {
+  id             String   @id @default(uuid())
+  name           String
+  color          String
+  isPrivate      Boolean  @default(false)
   organizationId String
-  email          String
-  role           String?
-  status         String
-  expiresAt      DateTime
-  inviterId      String
-  createdAt      DateTime
+  order          Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  inviter      User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
-  @@index([email])
+}
+
+model CustomField {
+  id                   String          @id @default(cuid())
+  organizationId       String
+  name                 String
+  type                 CustomFieldType
+  options              String[]
+  placeholder          String?
+  isRequired           Boolean         @default(false)
+  isPrivate            Boolean         @default(false)
+  showAnswerToEveryone Boolean         @default(false)
+  order                Int             @default(0)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
-
 enum BoardVisibility {
   public
   private
@@ -186,4 +250,14 @@ enum BoardDefaultSorting {
   recent
   oldest
   top
+}
+
+enum CustomFieldType {
+  text
+  number
+  url
+  date
+  boolean
+  dropdown
+  multiselect
 }

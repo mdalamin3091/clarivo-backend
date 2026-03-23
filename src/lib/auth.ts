@@ -200,7 +200,42 @@ export const auth = betterAuth({
             }),
           ]);
 
-          logger.info(`Default board, portal menus, statuses and tags seeded for org: ${organization.id}`);
+          // Seed default roadmap — needs status IDs, so runs after the Promise.all above
+          const statuses = await prisma.status.findMany({
+            where:   { organizationId: organization.id },
+            select:  { id: true, name: true },
+          });
+
+          const statusByName = Object.fromEntries(statuses.map(s => [s.name, s.id]));
+          const DEFAULT_ROADMAP_COLUMNS = [
+            { name: 'Backlog',     color: '#6366f1', order: 1, statusName: 'In Review'   },
+            { name: 'Planned',     color: '#f59e0b', order: 2, statusName: 'Planned'     },
+            { name: 'In Progress', color: '#3b82f6', order: 3, statusName: 'In Progress' },
+            { name: 'Done',        color: '#22c55e', order: 4, statusName: 'Completed'   },
+          ];
+
+          const roadmap = await prisma.roadmap.create({
+            data: {
+              organizationId: organization.id,
+              name:           'Main Roadmap',
+              icon:           { type: 'predefined', value: 'Map' } as unknown as Prisma.InputJsonValue,
+              visibility:     'everyone',
+              baseFilter:     '',
+              order:          1,
+            },
+          });
+
+          await prisma.roadmapColumn.createMany({
+            data: DEFAULT_ROADMAP_COLUMNS.map(col => ({
+              roadmapId:  roadmap.id,
+              name:       col.name,
+              color:      col.color,
+              order:      col.order,
+              baseFilter: statusByName[col.statusName] ? `statusId=${statusByName[col.statusName]}` : '',
+            })),
+          });
+
+          logger.info(`Default board, portal menus, statuses, tags and roadmap seeded for org: ${organization.id}`);
         },
       },
 

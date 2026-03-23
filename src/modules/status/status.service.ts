@@ -10,7 +10,7 @@ export const getStatuses = async (orgId: string): Promise<StatusResponse[]> => {
   return prisma.status.findMany({
     where:   { organizationId: orgId },
     select:  STATUS_SELECT,
-    orderBy: { createdAt: 'asc' },
+    orderBy: { order: 'asc' },
   });
 };
 
@@ -24,6 +24,13 @@ export const createStatus = async (
   });
   if (existing) throw new ApiError(409, 'A status with this name already exists');
 
+  // Determine next order value
+  const agg = await prisma.status.aggregate({
+    where: { organizationId: orgId },
+    _max:  { order: true },
+  });
+  const nextOrder = (agg._max.order ?? 0) + 1;
+
   // If this new status should be the default, unset the current default first
   if (input.isDefault) {
     return prisma.$transaction(async (tx) => {
@@ -32,14 +39,14 @@ export const createStatus = async (
         data:  { isDefault: false },
       });
       return tx.status.create({
-        data:   { organizationId: orgId, name: input.name, color: input.color, isDefault: true },
+        data:   { organizationId: orgId, name: input.name, color: input.color, isDefault: true, order: nextOrder },
         select: STATUS_SELECT,
       });
     });
   }
 
   return prisma.status.create({
-    data:   { organizationId: orgId, name: input.name, color: input.color, isDefault: false },
+    data:   { organizationId: orgId, name: input.name, color: input.color, isDefault: false, order: nextOrder },
     select: STATUS_SELECT,
   });
 };
@@ -82,6 +89,7 @@ export const updateStatus = async (
     data:   {
       ...(input.name  !== undefined && { name:  input.name }),
       ...(input.color !== undefined && { color: input.color }),
+      ...(input.order !== undefined && { order: input.order }),
     },
     select: STATUS_SELECT,
   });

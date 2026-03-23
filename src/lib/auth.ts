@@ -32,11 +32,11 @@ const DEFAULT_TAGS = [
 ] as const;
 
 const DEFAULT_STATUSES = [
-  { name: 'In Review',   color: '#6366f1', isDefault: false },
-  { name: 'Planned',     color: '#f59e0b', isDefault: false },
-  { name: 'In Progress', color: '#3b82f6', isDefault: true  },
-  { name: 'Completed',   color: '#22c55e', isDefault: false },
-  { name: 'Rejected',    color: '#ef4444', isDefault: false },
+  { name: 'In Review',   color: '#6366f1', isDefault: false, order: 1 },
+  { name: 'Planned',     color: '#f59e0b', isDefault: false, order: 2 },
+  { name: 'In Progress', color: '#3b82f6', isDefault: true,  order: 3 },
+  { name: 'Completed',   color: '#22c55e', isDefault: false, order: 4 },
+  { name: 'Rejected',    color: '#ef4444', isDefault: false, order: 5 },
 ] as const;
 
 const BOARD_GREETING = {
@@ -134,6 +134,8 @@ export const auth = betterAuth({
             hideCompletedAndCanceledStatuses: { type: 'boolean', required: false },
             hideAllStatusesFromPublicView:    { type: 'boolean', required: false },
             allowUserToTaggingPosts:          { type: 'boolean', required: false },
+            downVoting:                       { type: 'boolean', required: false },
+            hideVotedCountUntilVoted:         { type: 'boolean', required: false },
           },
         },
       },
@@ -167,6 +169,9 @@ export const auth = betterAuth({
                 hideAllStatusesFromPublicView:    false,
                 // Global tag settings
                 allowUserToTaggingPosts: false,
+                // Global voting settings
+                downVoting:               false,
+                hideVotedCountUntilVoted: false,
               },
             }),
             prisma.status.createMany({

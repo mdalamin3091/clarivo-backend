@@ -5,6 +5,7 @@ export const STATUS_SELECT = {
   name:           true,
   color:          true,
   isDefault:      true,
+  order:          true,
   createdAt:      true,
   updatedAt:      true,
 } as const;

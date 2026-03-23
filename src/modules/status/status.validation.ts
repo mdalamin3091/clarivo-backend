@@ -8,7 +8,9 @@ export const createStatusSchema = z.object({
   isDefault: z.boolean().optional(),
 });
 
-export const updateStatusSchema = createStatusSchema.partial();
+export const updateStatusSchema = createStatusSchema.partial().extend({
+  order: z.number().int().min(1).optional(),
+});
 
 export type CreateStatusBody = z.infer<typeof createStatusSchema>;
 export type UpdateStatusBody = z.infer<typeof updateStatusSchema>;

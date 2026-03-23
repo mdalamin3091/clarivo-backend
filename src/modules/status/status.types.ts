@@ -4,6 +4,7 @@ export interface StatusResponse {
   name:           string;
   color:          string;
   isDefault:      boolean;
+  order:          number;
   createdAt:      Date;
   updatedAt:      Date;
 }

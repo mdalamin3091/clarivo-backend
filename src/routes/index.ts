@@ -6,6 +6,7 @@ import boardRouter        from '../modules/board/board.routes';
 import statusRouter       from '../modules/status/status.routes';
 import tagRouter          from '../modules/tag/tag.routes';
 import customFieldRouter  from '../modules/custom-field/custom-field.routes';
+import roadmapRouter      from '../modules/roadmap/roadmap.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/boards',        boardRouter);
 router.use('/statuses',      statusRouter);
 router.use('/tags',          tagRouter);
 router.use('/custom-fields', customFieldRouter);
+router.use('/roadmaps',      roadmapRouter);
 
 export default router;

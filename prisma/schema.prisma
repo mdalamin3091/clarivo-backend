@@ -138,6 +138,8 @@ model Organization {
   statuses     Status[]
   tags         Tag[]
   customFields CustomField[]
+
+  roadmaps Roadmap[]
 }
 
 model Member {
@@ -204,6 +206,46 @@ model Board {
   @@index([organizationId])
 }
 
+model Roadmap {
+  id             String            @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  // Icon: { type: "predefined" | "emoji", value: "Map" }
+  icon           Json
+  visibility     RoadmapVisibility @default(everyone)
+  baseFilter     String            @default("")
+  copiedFromId   String?
+  order          Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  copiedFrom   Roadmap?        @relation("RoadmapCopies", fields: [copiedFromId], references: [id])
+  copies       Roadmap[]       @relation("RoadmapCopies")
+  columns      RoadmapColumn[]
+
+  @@index([organizationId])
+}
+
+model RoadmapColumn {
+  id          String   @id @default(uuid())
+  roadmapId   String
+  name        String
+  description String?
+  // Icon: { type: "predefined" | "emoji", value: "Circle" }
+  icon        Json?
+  color       String
+  baseFilter  String   @default("")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId])
+}
+
 model Status {
   id             String  @id @default(uuid())
   name           String
@@ -259,6 +301,11 @@ model CustomField {
 enum BoardVisibility {
   public
   private
+}
+
+enum RoadmapVisibility {
+    everyone 
+    teamOnly
 }
 
 enum BoardDefaultSorting {

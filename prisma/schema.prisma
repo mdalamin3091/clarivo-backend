@@ -121,9 +121,9 @@ model Organization {
   downVoting Boolean @default(false)
   hideVotedCountUntilVoted Boolean @default(false)
   
-  statuses Status[]
-
-  tags Tag[]
+  statuses     Status[]
+  tags         Tag[]
+  customFields CustomField[]
 }
 
 model Member {
@@ -220,6 +220,25 @@ model Tag {
   @@index([organizationId])
 }
 
+model CustomField {
+  id                   String          @id @default(cuid())
+  organizationId       String
+  name                 String
+  type                 CustomFieldType
+  options              String[]
+  placeholder          String?
+  isRequired           Boolean         @default(false)
+  isPrivate            Boolean         @default(false)
+  showAnswerToEveryone Boolean         @default(false)
+  order                Int             @default(0)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
 // ─── Enums ────────────────────────────────────────────────────────────────────
 enum BoardVisibility {
   public
@@ -231,4 +250,14 @@ enum BoardDefaultSorting {
   recent
   oldest
   top
+}
+
+enum CustomFieldType {
+  text
+  number
+  url
+  date
+  boolean
+  dropdown
+  multiselect
 }

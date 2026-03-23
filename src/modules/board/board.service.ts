@@ -29,6 +29,10 @@ const BOARD_SELECT = {
   disableFollowupQuestions: true,
   disableEndUserPosting:   true,
   order:                   true,
+  customFields: {
+    select: { id: true, name: true, type: true },
+    orderBy: { order: 'asc' as const },
+  },
   createdAt:               true,
   updatedAt:               true,
 } as const;
@@ -83,6 +87,9 @@ export const createBoard = async (
       disableFollowupQuestions: input.disableFollowupQuestions ?? false,
       disableEndUserPosting:   input.disableEndUserPosting ?? false,
       order:                   nextOrder,
+      ...(input.customFieldIds?.length
+        ? { customFields: { connect: input.customFieldIds.map(id => ({ id })) } }
+        : {}),
     },
     select: BOARD_SELECT,
   });
@@ -140,14 +147,17 @@ export const deleteBoard = async (orgId: string, boardId: string): Promise<void>
 
 function buildUpdateData(input: UpdateBoardBody): Prisma.BoardUpdateInput {
   const data: Prisma.BoardUpdateInput = {};
-  if (input.name                    !== undefined) data.name                    = input.name;
-  if (input.icon                    !== undefined) data.icon                    = input.icon as unknown as Prisma.InputJsonValue;
-  if (input.defaultSorting          !== undefined) data.defaultSorting          = input.defaultSorting;
-  if (input.greeting                !== undefined) data.greeting                = (input.greeting ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue;
-  if (input.visibility              !== undefined) data.visibility              = input.visibility;
-  if (input.allowSubscribe          !== undefined) data.allowSubscribe          = input.allowSubscribe;
+  if (input.name                     !== undefined) data.name                     = input.name;
+  if (input.icon                     !== undefined) data.icon                     = input.icon as unknown as Prisma.InputJsonValue;
+  if (input.defaultSorting           !== undefined) data.defaultSorting           = input.defaultSorting;
+  if (input.greeting                 !== undefined) data.greeting                 = (input.greeting ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue;
+  if (input.visibility               !== undefined) data.visibility               = input.visibility;
+  if (input.allowSubscribe           !== undefined) data.allowSubscribe           = input.allowSubscribe;
   if (input.disableFollowupQuestions !== undefined) data.disableFollowupQuestions = input.disableFollowupQuestions;
-  if (input.disableEndUserPosting   !== undefined) data.disableEndUserPosting   = input.disableEndUserPosting;
-  if (input.order                   !== undefined) data.order                   = input.order;
+  if (input.disableEndUserPosting    !== undefined) data.disableEndUserPosting    = input.disableEndUserPosting;
+  if (input.order                    !== undefined) data.order                    = input.order;
+  if (input.customFieldIds           !== undefined) {
+    data.customFields = { set: input.customFieldIds.map(id => ({ id })) };
+  }
   return data;
 }

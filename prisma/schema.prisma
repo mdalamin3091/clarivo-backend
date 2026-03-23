@@ -112,15 +112,29 @@ model Organization {
 
   // tag settings
   allowUserToTaggingPosts Boolean @default(false)
+  
+  // global access and privacy settings
+
+  // guest access 
+  anonymousPosting        Boolean @default(false)
+  anonymousCommenting     Boolean @default(false)
+  anonymousUpvoting       Boolean @default(true)
+
+  //moderation
+  postModeration    Boolean @default(false)
+  commentModeration Boolean @default(false)
+
+  //privacy
+  privateEta Boolean @default(false) // (Estimated time to arrival)
 
   boards      Board[]
   members     Member[]
   invitations Invitation[]
 
   // voting settings 
-  downVoting Boolean @default(false)
+  downVoting               Boolean @default(false)
   hideVotedCountUntilVoted Boolean @default(false)
-  
+
   statuses     Status[]
   tags         Tag[]
   customFields CustomField[]

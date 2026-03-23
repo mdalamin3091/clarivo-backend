@@ -136,6 +136,15 @@ export const auth = betterAuth({
             allowUserToTaggingPosts:          { type: 'boolean', required: false },
             downVoting:                       { type: 'boolean', required: false },
             hideVotedCountUntilVoted:         { type: 'boolean', required: false },
+            // Guest access
+            anonymousPosting:                 { type: 'boolean', required: false },
+            anonymousCommenting:              { type: 'boolean', required: false },
+            anonymousUpvoting:                { type: 'boolean', required: false },
+            // Moderation
+            postModeration:                   { type: 'boolean', required: false },
+            commentModeration:                { type: 'boolean', required: false },
+            // Privacy
+            privateEta:                       { type: 'boolean', required: false },
           },
         },
       },
@@ -172,6 +181,15 @@ export const auth = betterAuth({
                 // Global voting settings
                 downVoting:               false,
                 hideVotedCountUntilVoted: false,
+                // Guest access settings
+                anonymousPosting:    false,
+                anonymousCommenting: false,
+                anonymousUpvoting:   true,
+                // Moderation settings
+                postModeration:    false,
+                commentModeration: false,
+                // Privacy settings
+                privateEta: false,
               },
             }),
             prisma.status.createMany({

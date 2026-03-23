@@ -9,6 +9,12 @@ export interface BoardGreeting {
   postCreationButtonText: string;
 }
 
+export interface BoardCustomFieldSummary {
+  id:   string;
+  name: string;
+  type: string;
+}
+
 export interface BoardResponse {
   id:                      string;
   organizationId:          string;
@@ -22,6 +28,7 @@ export interface BoardResponse {
   disableFollowupQuestions: boolean;
   disableEndUserPosting:   boolean;
   order:                   number;
+  customFields:            BoardCustomFieldSummary[];
   createdAt:               Date;
   updatedAt:               Date;
 }

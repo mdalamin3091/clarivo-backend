@@ -20,11 +20,15 @@ export const createBoardSchema = z.object({
   allowSubscribe:          z.boolean().optional(),
   disableFollowupQuestions: z.boolean().optional(),
   disableEndUserPosting:   z.boolean().optional(),
+  customFieldIds:          z.array(z.string()).optional(),
 });
 
 export const updateBoardSchema = createBoardSchema
   .partial()
-  .extend({ order: z.number().int().min(0).optional() });
+  .extend({
+    order:          z.number().int().min(0).optional(),
+    customFieldIds: z.array(z.string()).optional(),
+  });
 
 export type CreateBoardBody = z.infer<typeof createBoardSchema>;
 export type UpdateBoardBody = z.infer<typeof updateBoardSchema>;

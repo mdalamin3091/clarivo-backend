@@ -26,6 +26,7 @@ export const createCustomFieldSchema = z
 export const updateCustomFieldSchema = z
   .object({
     name:                 z.string().min(1).max(100).trim().optional(),
+    type:                 z.enum(FIELD_TYPES).optional(),
     options:              z.array(z.string().min(1)).optional(),
     placeholder:          z.string().max(200).optional(),
     isRequired:           z.boolean().optional(),
@@ -33,9 +34,15 @@ export const updateCustomFieldSchema = z
     showAnswerToEveryone: z.boolean().optional(),
     order:                z.number().int().min(1).optional(),
   })
-  .superRefine((_data, _ctx) => {
-    // options validation on update is intentionally loose —
-    // we don't know the type here; service layer guards if needed
+  .superRefine((data, ctx) => {
+    const effectiveType = data.type;
+    if (effectiveType && OPTION_TYPES.has(effectiveType) && (!data.options || data.options.length === 0)) {
+      ctx.addIssue({
+        code:    z.ZodIssueCode.custom,
+        path:    ['options'],
+        message: `At least one option is required for ${effectiveType} fields`,
+      });
+    }
   });
 
 export type CreateCustomFieldBody = z.infer<typeof createCustomFieldSchema>;

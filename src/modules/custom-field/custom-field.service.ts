@@ -66,16 +66,24 @@ export const updateCustomField = async (
     if (conflict) throw new ApiError(409, 'A custom field with this name already exists');
   }
 
-  // Guard: options must not be cleared for dropdown/multiselect fields
-  if (OPTION_TYPES.has(field.type) && input.options !== undefined && input.options.length === 0) {
-    throw new ApiError(400, `At least one option is required for ${field.type} fields`);
+  // Determine the effective type after this update
+  const effectiveType = input.type ?? field.type;
+
+  // Guard: options must not be empty when the effective type requires them
+  if (OPTION_TYPES.has(effectiveType) && input.options !== undefined && input.options.length === 0) {
+    throw new ApiError(400, `At least one option is required for ${effectiveType} fields`);
   }
+
+  // When type changes away from dropdown/multiselect, clear options in DB
+  const shouldClearOptions = input.type !== undefined && !OPTION_TYPES.has(input.type) && OPTION_TYPES.has(field.type);
 
   return prisma.customField.update({
     where: { id: fieldId },
     data: {
       ...(input.name                 !== undefined && { name:                 input.name }),
-      ...(input.options              !== undefined && { options:              input.options }),
+      ...(input.type                 !== undefined && { type:                 input.type }),
+      ...(shouldClearOptions                       && { options:              [] }),
+      ...(!shouldClearOptions && input.options !== undefined && { options:   input.options }),
       ...(input.placeholder          !== undefined && { placeholder:          input.placeholder }),
       ...(input.isRequired           !== undefined && { isRequired:           input.isRequired }),
       ...(input.isPrivate            !== undefined && { isPrivate:            input.isPrivate }),

@@ -20,3 +20,19 @@ export const uploadImage = catchAsync(async (req: Request, res: Response) => {
     data: { url: fileUrl },
   });
 });
+
+export const uploadFileAsset = catchAsync(async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw new ApiError(400, 'No file uploaded');
+  }
+
+  const fileUrl  = `${config.BACKEND_URL}/uploads/files/${path.basename(req.file.path)}`;
+  const fileName = req.file.originalname;
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: 'File uploaded successfully',
+    data: { url: fileUrl, name: fileName },
+  });
+});

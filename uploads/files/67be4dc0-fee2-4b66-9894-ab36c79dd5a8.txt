@@ -1,0 +1,419 @@
+/**
+ * WordPress Dependencies
+ */
+import { useEffect, useState, useRef } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+/**
+ * External Dependencies
+ */
+import { keyframes } from '@emotion/react';
+import styled from '@emotion/styled';
+import { Form, Select } from 'antd';
+import useGoogle from 'react-google-autocomplete/lib/usePlacesAutocompleteService';
+/**
+ * Internal Dependencies
+ */
+import { CircleLoadingIcon, LocationOutlined } from '@/assets/icons';
+
+// Define the spinning animation
+const spinAnimation = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+// Styled SVG to apply animation
+const SpinAnimation = styled.div`
+	animation: ${ spinAnimation } 1s linear infinite;
+`;
+
+const { Option } = Select;
+
+export function LocationAutocomplete( {
+	settings,
+	form,
+	size,
+	initialValue,
+	name,
+} ) {
+	const { placePredictions, getPlacePredictions, isPlacePredictionsLoading } =
+		useGoogle( {
+			apiKey: settings?.google_api_key,
+		} );
+	const [ value, setValue ] = useState( [] );
+	const [ locationData, setLocationData ] = useState( null );
+	const [ isMapReady, setIsMapReady ] = useState( false );
+	const mapRef = useRef( null );
+	const mapInstanceRef = useRef( null );
+	const markerInstanceRef = useRef( null );
+	const mapContainerIdRef = useRef( `etn-location-map-container-${ Date.now() }-${ Math.random().toString( 36 ).substr( 2, 9 ) }` );
+
+	// Check if Google Maps API is fully loaded
+	const checkGoogleMapsReady = () => {
+		try {
+			return (
+				typeof window !== 'undefined' &&
+				window.google &&
+				window.google.maps &&
+				window.google.maps.Map &&
+				window.google.maps.Marker &&
+				window.google.maps.event &&
+				typeof window.google.maps.Map === 'function' &&
+				typeof window.google.maps.Marker === 'function' &&
+				// Check if the API is actually functional (not just defined)
+				window.google.maps.Map.prototype &&
+				window.google.maps.Marker.prototype
+			);
+		} catch ( e ) {
+			return false;
+		}
+	};
+
+	// Wait for Google Maps API to be ready
+	useEffect( () => {
+		// Check immediately
+		if ( checkGoogleMapsReady() ) {
+			// Add a small delay to ensure API is fully initialized
+			setTimeout( () => {
+				setIsMapReady( true );
+			}, 100 );
+			return;
+		}
+
+		// Poll for Google Maps to be ready
+		let attempts = 0;
+		const maxAttempts = 100; // 10 seconds max
+		const checkInterval = setInterval( () => {
+			attempts++;
+			if ( checkGoogleMapsReady() ) {
+				// Add a small delay to ensure API is fully initialized
+				setTimeout( () => {
+					setIsMapReady( true );
+				}, 100 );
+				clearInterval( checkInterval );
+			} else if ( attempts >= maxAttempts ) {
+				clearInterval( checkInterval );
+				console.warn( 'Google Maps API failed to load after 10 seconds' );
+			}
+		}, 100 );
+
+		return () => {
+			clearInterval( checkInterval );
+		};
+	}, [] );
+
+	// Handle initial value for nested fields
+	useEffect( () => {
+		if ( initialValue ) {
+			setValue( [ initialValue ] );
+			if ( initialValue.latitude && initialValue.longitude ) {
+				setLocationData( {
+					latitude: initialValue.latitude,
+					longitude: initialValue.longitude,
+				} );
+			}
+		} else {
+			// Try to get the current value from the form
+			const fieldName =
+				Array.isArray( name ) &&
+				name.length === 2 &&
+				name[ 1 ] === 'offline'
+					? [ ...name, 'address' ]
+					: name || [ 'location', 'address' ];
+
+			const currentValue = form.getFieldValue( fieldName );
+			if ( currentValue ) {
+				setValue( [ { address: currentValue } ] );
+			}
+
+			// Try to get full location data from form
+			const locationFieldName =
+				Array.isArray( name ) &&
+				name.length === 2 &&
+				name[ 1 ] === 'offline'
+					? name
+					: name || 'location';
+
+			const fullLocationData = form.getFieldValue( locationFieldName );
+			if ( fullLocationData && fullLocationData.latitude && fullLocationData.longitude ) {
+				setLocationData( {
+					latitude: fullLocationData.latitude,
+					longitude: fullLocationData.longitude,
+				} );
+			}
+		}
+	}, [ initialValue, name, form ] );
+
+	const handleSearch = ( searchValue ) => {
+		getPlacePredictions( { input: searchValue } );
+	};
+
+	const handleChange = ( selectedValues ) => {
+		const lastValue = selectedValues[ selectedValues.length - 1 ];
+		const place = placePredictions.find(
+			( prediction ) => prediction.description === lastValue
+		);
+
+		const newValue = place
+			? { address: place.description, place_id: place.place_id }
+			: { address: lastValue, place_id: null };
+		setValue( [ newValue ] );
+
+		if ( place ) {
+			getPlaceDetails( place.place_id, place.description );
+		} else {
+			// Handle nested field names for hybrid events
+			if (
+				Array.isArray( name ) &&
+				name.length === 2 &&
+				name[ 1 ] === 'offline'
+			) {
+				// For hybrid events, set the offline object
+				form.setFieldValue( name, newValue );
+			} else {
+				// For regular offline events, set the location object
+				form.setFieldValue( name || 'location', newValue );
+			}
+		}
+	};
+
+	const getPlaceDetails = async ( placeId, placeName ) => {
+		const service = new window.google.maps.places.PlacesService(
+			document.createElement( 'div' )
+		);
+
+		await service.getDetails( { placeId }, ( place, status ) => {
+			if ( status === window.google.maps.places.PlacesServiceStatus.OK ) {
+				const latitude = place.geometry.location.lat();
+				const longitude = place.geometry.location.lng();
+
+				const placeData = {
+					address: placeName || place.formatted_address,
+					place_id: placeId,
+					latitude,
+					longitude,
+				};
+
+				// Update location data for map preview
+				setLocationData( {
+					latitude,
+					longitude,
+				} );
+
+				// Handle nested field names for hybrid events
+				if (
+					Array.isArray( name ) &&
+					name.length === 2 &&
+					name[ 1 ] === 'offline'
+				) {
+					// For hybrid events, set the offline object
+					form.setFieldValue( name, placeData );
+				} else {
+					// For regular offline events, set the location object
+					form.setFieldValue( name || 'location', placeData );
+				}
+			}
+		} );
+	};
+
+	// Initialize and update map when location data changes
+	useEffect( () => {
+		if ( ! isMapReady || ! locationData || ! mapRef.current ) {
+			return;
+		}
+
+		if ( ! checkGoogleMapsReady() ) {
+			return;
+		}
+
+		// Ensure the map container is in the DOM
+		const mapElement = mapRef.current;
+		if ( ! mapElement || ! document.body.contains( mapElement ) ) {
+			// Wait a bit for the element to be rendered
+			const timer = setTimeout( () => {
+				if ( mapRef.current && document.body.contains( mapRef.current ) ) {
+					// Retry initialization
+					const event = new Event( 'retryMapInit' );
+					window.dispatchEvent( event );
+				}
+			}, 200 );
+			return () => clearTimeout( timer );
+		}
+
+		const { latitude, longitude } = locationData;
+
+		if ( isNaN( latitude ) || isNaN( longitude ) ) {
+			return;
+		}
+
+		try {
+			const Maps = window.google.maps;
+			const position = { lat: latitude, lng: longitude };
+
+			// Initialize map if it doesn't exist
+			if ( ! mapInstanceRef.current ) {
+				const mapParams = {
+					zoom: 15,
+					center: position,
+					scrollwheel: false,
+				};
+				const map = new Maps.Map( mapRef.current, mapParams );
+				mapInstanceRef.current = map;
+
+				// Create marker
+				const markerParams = {
+					map: map,
+					position: position,
+					draggable: true,
+				};
+				const marker = new Maps.Marker( markerParams );
+				markerInstanceRef.current = marker;
+
+				// Update coordinates when marker is dragged
+				Maps.event.addListener( marker, 'drag', function ( e ) {
+					const newLat = e.latLng.lat();
+					const newLng = e.latLng.lng();
+					setLocationData( {
+						latitude: newLat,
+						longitude: newLng,
+					} );
+
+					// Update form field
+					const locationFieldName =
+						Array.isArray( name ) &&
+						name.length === 2 &&
+						name[ 1 ] === 'offline'
+							? name
+							: name || 'location';
+
+					const currentLocationData = form.getFieldValue( locationFieldName ) || {};
+					form.setFieldValue( locationFieldName, {
+						...currentLocationData,
+						latitude: newLat,
+						longitude: newLng,
+					} );
+				} );
+			} else {
+				// Update existing map center and marker position
+				mapInstanceRef.current.setCenter( position );
+				if ( markerInstanceRef.current ) {
+					markerInstanceRef.current.setPosition( position );
+				}
+			}
+		} catch ( error ) {
+			console.error( 'Error initializing Google Map:', error );
+		}
+
+		// Cleanup function
+		return () => {
+			if ( markerInstanceRef.current ) {
+				window.google.maps.event.clearInstanceListeners( markerInstanceRef.current );
+				markerInstanceRef.current = null;
+			}
+			if ( mapInstanceRef.current ) {
+				// Clear map instance
+				mapInstanceRef.current = null;
+			}
+		};
+	}, [ isMapReady, locationData, name, form ] );
+
+	// Listen for retry events
+	useEffect( () => {
+		const handleRetry = () => {
+			if ( locationData && mapRef.current && isMapReady ) {
+				// Trigger re-initialization by updating locationData
+				setLocationData( { ...locationData } );
+			}
+		};
+
+		window.addEventListener( 'retryMapInit', handleRetry );
+		return () => {
+			window.removeEventListener( 'retryMapInit', handleRetry );
+		};
+	}, [ locationData, isMapReady ] );
+
+	return (
+		<Form.Item
+			name={
+				Array.isArray( name ) &&
+				name.length === 2 &&
+				name[ 1 ] === 'offline'
+					? [ ...name, 'address' ]
+					: name || [ 'location', 'address' ]
+			}
+			label={ __( 'Venue Location', 'eventin' ) }
+			required={ true }
+			rules={ [
+				{
+					required: true,
+					message: __( 'Please enter a location address', 'eventin' ),
+				},
+			] }
+			tooltip={ __(
+				'Add event location address, if you add google map api key it will suggest location address',
+				'eventin'
+			) }
+		>
+			<Select
+				showSearch
+				style={ { width: '100%' } }
+				value={ value.map( ( item ) => item.address || item ) }
+				defaultValue={ initialValue }
+				suffixIcon={
+					isPlacePredictionsLoading ? (
+						<SpinAnimation>
+							<CircleLoadingIcon />
+						</SpinAnimation>
+					) : (
+						<CircleLoadingIcon />
+					)
+				}
+				placeholder={ __( 'Select a location', 'eventin' ) }
+				size={ size || 'large' }
+				onChange={ handleChange }
+				onSearch={ handleSearch }
+				filterOption={ false }
+				loading={ isPlacePredictionsLoading }
+				mode="tags"
+				maxCount={ 1 }
+			>
+				{ placePredictions.map( ( prediction ) => (
+					<Option
+						key={ prediction.place_id }
+						value={ prediction.description }
+					>
+						<LocationOutlined /> { prediction.description }
+					</Option>
+				) ) }
+			</Select>
+			{ locationData && locationData.latitude && locationData.longitude && (
+				<div
+					className="etn-location-map"
+					data-lat={ locationData.latitude }
+					data-long={ locationData.longitude }
+					data-zoom="15"
+					style={ {
+						marginTop: '16px',
+						width: '100%',
+						height: '300px',
+						border: '1px solid #d9d9d9',
+						borderRadius: '4px',
+						overflow: 'hidden',
+					} }
+				>
+					<div
+						id={ mapContainerIdRef.current }
+						ref={ mapRef }
+						style={ {
+							width: '100%',
+							height: '100%',
+						} }
+					/>
+				</div>
+			) }
+		</Form.Item>
+	);
+}

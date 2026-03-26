@@ -1,16 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth';
-import { imageUpload } from './upload.config';
-import { uploadImage } from './upload.controller';
+import { imageUpload, fileUpload } from './upload.config';
+import { uploadImage, uploadFileAsset } from './upload.controller';
 
 const router = Router();
 
 // POST /api/v1/upload/image?type=logo|social
-// Accepts multipart/form-data with a single field named "file"
 router.post(
   '/image',
   requireAuth,
-  // Wrap multer so errors pass through the global errorHandler
   (req: Request, res: Response, next: NextFunction) => {
     imageUpload(req, res, (err) => {
       if (err) return next(err);
@@ -18,6 +16,19 @@ router.post(
     });
   },
   uploadImage,
+);
+
+// POST /api/v1/upload/file  — arbitrary file attachments (≤10 MB)
+router.post(
+  '/file',
+  requireAuth,
+  (req: Request, res: Response, next: NextFunction) => {
+    fileUpload(req, res, (err) => {
+      if (err) return next(err);
+      next();
+    });
+  },
+  uploadFileAsset,
 );
 
 export default router;

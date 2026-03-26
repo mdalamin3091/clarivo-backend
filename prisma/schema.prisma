@@ -15,8 +15,8 @@ model User {
   email         String   @unique
   emailVerified Boolean
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   sessions    Session[]
   accounts    Account[]
@@ -31,8 +31,8 @@ model Session {
   expiresAt            DateTime
   ipAddress            String?
   userAgent            String?
-  createdAt            DateTime
-  updatedAt            DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
   activeOrganizationId String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,8 +53,8 @@ model Account {
   scope                 String?
   idToken               String?   @db.Text
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -67,8 +67,8 @@ model Verification {
   identifier String
   value      String    @db.Text
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([identifier])
 }
@@ -81,7 +81,8 @@ model Organization {
   slug      String   @unique
   logo      String?
   metadata  String?
-  createdAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Onboarding fields
   modules       String[]
@@ -112,13 +113,13 @@ model Organization {
 
   // tag settings
   allowUserToTaggingPosts Boolean @default(false)
-  
+
   // global access and privacy settings
 
   // guest access 
-  anonymousPosting        Boolean @default(false)
-  anonymousCommenting     Boolean @default(false)
-  anonymousUpvoting       Boolean @default(true)
+  anonymousPosting    Boolean @default(false)
+  anonymousCommenting Boolean @default(false)
+  anonymousUpvoting   Boolean @default(true)
 
   //moderation
   postModeration    Boolean @default(false)
@@ -140,6 +141,120 @@ model Organization {
   customFields CustomField[]
 
   roadmaps Roadmap[]
+
+  feedbacks Feedback[]
+}
+
+model Feedback {
+  id             String     @id @default(cuid())
+  organizationId String
+  boardId        String
+  authorId       String
+  statusId       String?
+  title          String
+  description    Json?
+  postVisibility Visibility @default(public)
+  enableComment  Boolean    @default(true)
+  pinnedAt       DateTime?  // null = not pinned; set to timestamp when pinned (used for ordering)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  board        Board             @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author       Member            @relation(name: "author", fields: [authorId], references: [id])
+  status       Status?           @relation(fields: [statusId], references: [id], onDelete: SetNull)
+  tags         FeedbackTag[]
+  assignees    FeedbackAssignee[]
+
+  votes    Vote[]
+  comments Comment[]
+
+  @@index([organizationId])
+  @@index([boardId])
+  @@index([statusId])
+  @@index([authorId])
+}
+
+model FeedbackTag {
+  feedbackId String
+  tagId      String
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([feedbackId, tagId])
+  @@index([feedbackId])
+  @@index([tagId])
+}
+
+model FeedbackAssignee {
+  feedbackId String
+  memberId   String
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([feedbackId, memberId])
+  @@index([feedbackId])
+  @@index([memberId])
+}
+
+// One row = one user's single vote on a feedback post.
+// Aggregate counts are derived at query time (COUNT WHERE type = upvote/downvote).
+model Vote {
+  id         String   @id @default(cuid())
+  feedbackId String
+  voterId    String
+  type       VoteType @default(upvote)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  voter    Member   @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackId, voterId])
+  @@index([feedbackId])
+}
+
+model Comment {
+  id         String  @id @default(cuid())
+  feedbackId String
+  authorId   String
+  parentId   String? // null = top-level comment; set = reply
+  content    Json    // Tiptap JSON document
+  isEdited   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  feedback Feedback      @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  author   Member        @relation(fields: [authorId], references: [id])
+  parent   Comment?      @relation(name: "replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[]     @relation("replies")
+  votes    CommentVote[]
+
+  @@index([feedbackId])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// One row = one user's single vote on a comment.
+model CommentVote {
+  id        String   @id @default(cuid())
+  commentId String
+  voterId   String
+  type      VoteType @default(upvote)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  voter   Member  @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, voterId])
+  @@index([commentId])
 }
 
 model Member {
@@ -147,10 +262,16 @@ model Member {
   organizationId String
   userId         String
   role           String
-  createdAt      DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdFeedbacks   Feedback[]         @relation(name: "author")
+  assignedFeedbacks  FeedbackAssignee[]
+  votes              Vote[]
+  commentVotes       CommentVote[]
+  comments           Comment[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
@@ -165,7 +286,8 @@ model Invitation {
   status         String
   expiresAt      DateTime
   inviterId      String
-  createdAt      DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviter      User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
@@ -189,18 +311,19 @@ model Board {
   // { welcomingTitle, welcomingDescription, postCreationButtonText }
   greeting Json?
 
-  visibility               BoardVisibility @default(public)
-  allowSubscribe           Boolean         @default(true)
-  disableFollowupQuestions Boolean         @default(false)
-  disableEndUserPosting    Boolean         @default(false)
+  visibility               Visibility @default(public)
+  allowSubscribe           Boolean    @default(true)
+  disableFollowupQuestions Boolean    @default(false)
+  disableEndUserPosting    Boolean    @default(false)
 
   order Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   customFields CustomField[]
+  feedbacks    Feedback[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -220,7 +343,7 @@ model Roadmap {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
-  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   copiedFrom   Roadmap?        @relation("RoadmapCopies", fields: [copiedFromId], references: [id])
   copies       Roadmap[]       @relation("RoadmapCopies")
   columns      RoadmapColumn[]
@@ -238,6 +361,7 @@ model RoadmapColumn {
   color       String
   baseFilter  String   @default("")
   order       Int      @default(0)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -258,6 +382,7 @@ model Status {
   updatedAt DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  feedbacks    Feedback[]
 
   @@index([organizationId])
 }
@@ -273,6 +398,7 @@ model Tag {
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  feedbacks    FeedbackTag[]
 
   @@index([organizationId])
 }
@@ -288,6 +414,7 @@ model CustomField {
   isPrivate            Boolean         @default(false)
   showAnswerToEveryone Boolean         @default(false)
   order                Int             @default(0)
+  
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
 
@@ -298,14 +425,19 @@ model CustomField {
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
-enum BoardVisibility {
+enum Visibility {
   public
   private
 }
 
+enum VoteType {
+  upvote
+  downvote
+}
+
 enum RoadmapVisibility {
-    everyone 
-    teamOnly
+  everyone
+  teamOnly
 }
 
 enum BoardDefaultSorting {

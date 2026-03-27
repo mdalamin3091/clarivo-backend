@@ -156,6 +156,7 @@ model Feedback {
   postVisibility Visibility @default(public)
   enableComment  Boolean    @default(true)
   pinnedAt       DateTime?  // null = not pinned; set to timestamp when pinned (used for ordering)
+  eta            DateTime?  // optional target / due date set by admins
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

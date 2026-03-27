@@ -88,8 +88,8 @@ export const listFeedback = async (
   ];
   if (sortField === 'recent')   orderBy.push({ createdAt: 'desc' });
   if (sortField === 'oldest')   orderBy.push({ createdAt: 'asc'  });
-  if (sortField === 'top')      orderBy.push({ votes:     { _count: 'desc' } });
-  if (sortField === 'trending') orderBy.push({ createdAt: 'desc' }); // simplified
+  if (sortField === 'top')      orderBy.push({ votes: { _count: 'desc' } });
+  if (sortField === 'trending') { orderBy.push({ votes: { _count: 'desc' } }); orderBy.push({ createdAt: 'desc' }); }
 
   const [rawList, total] = await Promise.all([
     prisma.feedback.findMany({
@@ -164,6 +164,7 @@ export const createFeedback = async (
       statusId:       input.statusId ?? null,
       postVisibility: input.postVisibility ?? 'public',
       enableComment:  input.enableComment  ?? true,
+      eta:            input.eta ? new Date(input.eta) : null,
       tags: input.tagIds?.length
         ? { create: input.tagIds.map((tagId) => ({ tagId })) }
         : undefined,
@@ -186,12 +187,31 @@ export const updateFeedback = async (
   const existing = await prisma.feedback.findFirst({ where: { id: feedbackId, organizationId: orgId } });
   if (!existing) throw new ApiError(404, 'Feedback not found');
 
+  // Resolve caller's member record and check permission (author or admin/owner)
+  const member = await prisma.member.findUnique({
+    where:  { organizationId_userId: { organizationId: orgId, userId } },
+    select: { id: true, role: true },
+  });
+  if (!member) throw new ApiError(403, 'You are not a member of this organization');
+
+  const isAdmin = member.role === 'admin' || member.role === 'owner';
+  if (existing.authorId !== member.id && !isAdmin) {
+    throw new ApiError(403, 'You do not have permission to edit this post');
+  }
+
+  // Validate boardId belongs to org when provided
+  if (input.boardId !== undefined) {
+    const board = await prisma.board.findFirst({ where: { id: input.boardId, organizationId: orgId } });
+    if (!board) throw new ApiError(404, 'Board not found');
+  }
+
   const data: Prisma.FeedbackUpdateInput = {};
   if (input.title          !== undefined) data.title          = input.title;
   if (input.description    !== undefined) data.description    = input.description as Prisma.InputJsonValue;
   if (input.postVisibility !== undefined) data.postVisibility = input.postVisibility;
   if (input.enableComment  !== undefined) data.enableComment  = input.enableComment;
   if (input.pinnedAt       !== undefined) data.pinnedAt       = input.pinnedAt ? new Date(input.pinnedAt) : null;
+  if (input.eta            !== undefined) data.eta            = input.eta ? new Date(input.eta) : null;
   if (input.statusId !== undefined)
     data.status = input.statusId ? { connect: { id: input.statusId } } : { disconnect: true };
   if (input.tagIds !== undefined)
@@ -213,10 +233,24 @@ export const updateFeedback = async (
 
 export const deleteFeedback = async (
   orgId:      string,
+  userId:     string,
   feedbackId: string,
 ): Promise<void> => {
   const existing = await prisma.feedback.findFirst({ where: { id: feedbackId, organizationId: orgId } });
   if (!existing) throw new ApiError(404, 'Feedback not found');
+
+  // Resolve caller's member record and check permission (author or admin/owner)
+  const member = await prisma.member.findUnique({
+    where:  { organizationId_userId: { organizationId: orgId, userId } },
+    select: { id: true, role: true },
+  });
+  if (!member) throw new ApiError(403, 'You are not a member of this organization');
+
+  const isAdmin = member.role === 'admin' || member.role === 'owner';
+  if (existing.authorId !== member.id && !isAdmin) {
+    throw new ApiError(403, 'You do not have permission to delete this post');
+  }
+
   await prisma.feedback.delete({ where: { id: feedbackId } });
 };
 

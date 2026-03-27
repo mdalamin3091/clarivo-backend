@@ -1,6 +1,7 @@
 import { Request, Response }         from 'express';
 import catchAsync                     from '../../utils/catchAsync';
 import sendResponse                   from '../../utils/sendResponse';
+import ApiError                       from '../../utils/ApiError';
 import { AuthenticatedRequest }       from '../../middlewares/requireAuth';
 import { feedbackQuerySchema }        from './feedback.validation';
 import * as service                   from './feedback.service';
@@ -9,7 +10,7 @@ import * as service                   from './feedback.service';
 
 const getOrgId = (req: Request): string => {
   const orgId = (req as AuthenticatedRequest).session.activeOrganizationId;
-  if (!orgId) throw new Error('No active organization');
+  if (!orgId) throw new ApiError(403, 'No active organization');
   return orgId;
 };
 
@@ -40,7 +41,7 @@ export const editFeedback = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const removeFeedback = catchAsync(async (req: Request, res: Response) => {
-  await service.deleteFeedback(getOrgId(req), req.params.id as string);
+  await service.deleteFeedback(getOrgId(req), getUserId(req), req.params.id as string);
   sendResponse(res, { statusCode: 200, success: true, message: 'Feedback deleted', data: null });
 });
 

@@ -1,9 +1,9 @@
-// ── Feedback module types ──────────────────────────────────────────────────────
+// ── Feedback module TypeScript types ──────────────────────────────────────────
 
 export interface AuthorSummary {
-  id:    string;
-  user:  { id: string; name: string; image: string | null };
-  role:  string;
+  id:   string;
+  role: string;
+  user: { id: string; name: string; image: string | null };
 }
 
 export interface StatusSummary {
@@ -18,6 +18,8 @@ export interface TagSummary {
   color: string;
 }
 
+// ── Comment ────────────────────────────────────────────────────────────────────
+
 export interface CommentVoteCount {
   upvotes:   number;
   downvotes: number;
@@ -28,21 +30,24 @@ export interface CommentResponse {
   feedbackId: string;
   authorId:   string;
   parentId:   string | null;
-  content:    unknown;           // Tiptap JSON doc
+  content:    unknown;           // Tiptap / ProseMirror JSON doc
   isEdited:   boolean;
   createdAt:  Date;
   updatedAt:  Date;
   author:     AuthorSummary;
   votes:      CommentVoteCount;
-  myVote:     'upvote' | 'downvote' | null; // current viewer's vote
+  myVote:     'upvote' | 'downvote' | null;
   replies:    CommentResponse[];
 }
+
+// ── Feedback ───────────────────────────────────────────────────────────────────
 
 export interface FeedbackVoteCount {
   upvotes:   number;
   downvotes: number;
 }
 
+/** Shape returned in list and detail responses. */
 export interface FeedbackListItem {
   id:             string;
   organizationId: string;
@@ -54,6 +59,7 @@ export interface FeedbackListItem {
   postVisibility: 'public' | 'private';
   enableComment:  boolean;
   pinnedAt:       Date | null;
+  eta:            Date | null;
   createdAt:      Date;
   updatedAt:      Date;
   author:         AuthorSummary;
@@ -65,13 +71,14 @@ export interface FeedbackListItem {
   commentCount:   number;
 }
 
+/** Full detail response — extends list item with nested comment tree. */
 export interface FeedbackDetail extends FeedbackListItem {
   comments: CommentResponse[];
 }
 
 export interface FeedbackListResponse {
-  feedbacks:  FeedbackListItem[];
-  total:      number;
-  page:       number;
-  limit:      number;
+  feedbacks: FeedbackListItem[];
+  total:     number;
+  page:      number;
+  limit:     number;
 }
